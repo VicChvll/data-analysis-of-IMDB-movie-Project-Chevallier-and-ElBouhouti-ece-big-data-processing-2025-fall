@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 IMDB Data Analysis & Stream Processing
 Group Members:
 
@@ -103,3 +104,6 @@ Notes
 Les datasets IMDB peuvent prendre plusieurs minutes à télécharger
 Le stream processing nécessite une connexion internet active
 Les événements Wikipedia peuvent être rares selon les entités
+=======
+# data-analysis-of-IMDB-movie-Project-Chevallier-and-ElBouhouti-ece-big-data-processing-2025-fall
+>>>>>>> 952d46d56180af181770337637c8ffefb398aab3
