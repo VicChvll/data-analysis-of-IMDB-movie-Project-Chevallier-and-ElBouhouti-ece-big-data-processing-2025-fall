@@ -27,7 +27,7 @@ data-analysis-of-IMDB-movie-Project-Chevallier-ElBouhouti/
 
 ### Prerequisites
 - Docker Desktop
-- Python 3.9+ (problems with kafka on 3.13, had to downgrade)
+- Python 3.9+ (problems with kafka on 3.13 so i had to downgrade..)
 - pip
 
 ### Steps
@@ -54,7 +54,7 @@ Run the Jupyter notebook:
 jupyter notebook imdb_analysis.ipynb
 ```
 
-The notebook downloads IMDB datasets automatically and answers all 14 questions. Results are exported to ANSWERS.md. Dataset downloads may take 10-30 minutes.
+The notebook downloads IMDB datasets automatically and answers all 14 questions and the results are exported to ANSWERS.md.
 
 ## Part 2: Stream Processing
 
@@ -86,7 +86,7 @@ python src/kafka_consumer.py
 
 ### Note on Wikipedia Events
 
-Wikipedia edits for IMDB entities are extremely rare (1-2 per day). The system works but capturing live events requires hours of runtime. Test data is provided to demonstrate functionality.
+Wikipedia edits for IMDB entities are extremely rare. The system works but capturing live events requires hours of runtime. Test data is provided in our project to demonstrate functionality.
 
 ### Loading Test Data
 ```bash
@@ -122,7 +122,7 @@ Alerts trigger on:
 - Rapid edits: more than 3 edits per minute (HIGH)
 - Bot activity: more than 80% bot edits (LOW)
 
-Each alert type has a 5-minute cooldown.
+Each alert type has a 5 minutes cooldown.
 
 ## Verification
 ```bash
@@ -131,8 +131,3 @@ docker exec -it postgres psql -U imdb_user -d imdb_db -c "SELECT * FROM entity_m
 docker exec -it postgres psql -U imdb_user -d imdb_db -c "SELECT * FROM alerts;"
 ```
 
-## Shutdown
-```bash
-# Stop producer and consumer: Ctrl+C
-docker-compose down
-```
