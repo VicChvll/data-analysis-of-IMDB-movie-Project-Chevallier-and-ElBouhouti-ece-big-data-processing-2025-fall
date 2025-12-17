@@ -5,7 +5,6 @@
 - ELBOUHOUTI Adeline
 
 ## Project Structure
-
 ```
 data-analysis-of-IMDB-movie-Project-Chevallier-ElBouhouti/
 ├── data/                    # IMDB Datasets
@@ -19,6 +18,7 @@ data-analysis-of-IMDB-movie-Project-Chevallier-ElBouhouti/
 ├── outputs/                # Logs and results
 ├── imdb_analysis.ipynb     # IMDB Analysis
 ├── ANSWERS.md              # Answers to questions
+├── insert_test_data.sql    # Test data
 ├── docker-compose.yml      # Docker configuration
 └── requirements.txt        # Python dependencies
 ```
@@ -27,9 +27,8 @@ data-analysis-of-IMDB-movie-Project-Chevallier-ElBouhouti/
 
 ### Prerequisites
 - Docker Desktop
-- Python 3.9+ (i had python 3.13 and it caused problem with panda and numpy had to downgrade)
+- Python 3.9+ (problems with kafka on 3.13, had to downgrade)
 - pip
-
 
 ### Steps
 
@@ -43,46 +42,41 @@ pip install -r requirements.txt
 docker-compose up -d
 ```
 
-3. Verify services are running:
+3. Verify services:
 ```bash
 docker-compose ps
 ```
 
-## Usage
-
-### Part 1: IMDB Analysis
+## Part 1: IMDB Analysis
 
 Run the Jupyter notebook:
 ```bash
 jupyter notebook imdb_analysis.ipynb
 ```
 
-The notebook will:
-- Download IMDB datasets
-- Answer all questions
-- Generate ANSWERS.md
+The notebook downloads IMDB datasets automatically and answers all 14 questions. Results are exported to ANSWERS.md. Dataset downloads may take 10-30 minutes.
 
-### Part 2: Stream Processing
+## Part 2: Stream Processing
 
-Open 2 separate terminals:
+### Architecture
 
-**Terminal 1 - Producer:**
+Producer monitors Wikimedia EventStreams for edits on 5 IMDB entities, publishes to Kafka, Consumer processes events and stores metrics/alerts in PostgreSQL.
+
+### Running
+
+Open 2 terminals:
+
+**Terminal 1:**
 ```bash
 python src/kafka_producer.py
 ```
 
-**Terminal 2 - Consumer:**
+**Terminal 2:**
 ```bash
 python src/kafka_consumer.py
 ```
 
-The system will:
-- Monitor Wikipedia events in real-time
-- Track 5 IMDB entities
-- Store metrics in PostgreSQL
-- Generate alerts
-
-## Tracked Entities
+### Tracked Entities
 
 1. The Shawshank Redemption (movie)
 2. The Godfather (movie)
@@ -90,43 +84,55 @@ The system will:
 4. Morgan Freeman (actor)
 5. Film noir (genre)
 
+### Note on Wikipedia Events
+
+Wikipedia edits for IMDB entities are extremely rare (1-2 per day). The system works but capturing live events requires hours of runtime. Test data is provided to demonstrate functionality.
+
+### Loading Test Data
+```bash
+docker cp insert_test_data.sql postgres:/tmp/insert_test_data.sql
+docker exec -it postgres psql -U imdb_user -d imdb_db -f /tmp/insert_test_data.sql
+```
+
 ## Database
 
 ### Tables
+
 - **wiki_events**: Raw Wikipedia events
-- **entity_metrics**: Aggregated metrics per entity
-- **alerts**: Generated alerts
+- **entity_metrics**: Aggregated statistics (5-minute windows)
+- **alerts**: Alert notifications
 
 ### Connection
 ```bash
 docker exec -it postgres psql -U imdb_user -d imdb_db
 ```
 
-### Useful queries
+### Queries
 ```sql
-SELECT * FROM wiki_events LIMIT 10;
+SELECT * FROM wiki_events ORDER BY timestamp DESC;
 SELECT entity_name, COUNT(*) FROM wiki_events GROUP BY entity_name;
+SELECT * FROM entity_metrics ORDER BY window_start DESC;
 SELECT * FROM alerts ORDER BY triggered_at DESC;
 ```
 
 ## Alert System
 
-The consumer generates alerts for:
-- High activity (>10 edits per hour)
-- Rapid edits (>3 per minute)
-- High bot activity (>80%)
+Alerts trigger on:
+- High activity: more than 10 edits per hour (MEDIUM)
+- Rapid edits: more than 3 edits per minute (HIGH)
+- Bot activity: more than 80% bot edits (LOW)
+
+Each alert type has a 5-minute cooldown.
+
+## Verification
+```bash
+docker exec -it postgres psql -U imdb_user -d imdb_db -c "SELECT COUNT(*) FROM wiki_events;"
+docker exec -it postgres psql -U imdb_user -d imdb_db -c "SELECT * FROM entity_metrics;"
+docker exec -it postgres psql -U imdb_user -d imdb_db -c "SELECT * FROM alerts;"
+```
 
 ## Shutdown
 ```bash
 # Stop producer and consumer: Ctrl+C
-
-# Stop Docker
 docker-compose down
 ```
-
-## Notes
-
-- IMDB datasets may take several minutes to download
-- Stream processing requires active internet connection
-- Wikipedia events may be rare depending on entities
-
