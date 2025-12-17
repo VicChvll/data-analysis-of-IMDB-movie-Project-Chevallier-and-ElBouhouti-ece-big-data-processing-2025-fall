@@ -1,109 +1,132 @@
-<<<<<<< HEAD
-IMDB Data Analysis & Stream Processing
-Group Members:
+# IMDB Data Analysis & Stream Processing
 
-CHEVALLIER Victor
-ELBOUHOUTI Adeline
+## Group Members
+- CHEVALLIER Victor
+- ELBOUHOUTI Adeline
 
-Structure du Projet
+## Project Structure
 
-imdb-project/
-├── data/                    # Datasets IMDB
-├── src/                     # Code source
+```
+data-analysis-of-IMDB-movie-Project-Chevallier-ElBouhouti/
+├── data/                    # IMDB Datasets
+├── src/                     # Source code
 │   ├── config.py           # Configuration
-│   ├── database.py         # Operations base de données
-│   ├── kafka_producer.py   # Producteur Kafka
-│   └── kafka_consumer.py   # Consommateur Kafka
+│   ├── database.py         # Database operations
+│   ├── kafka_producer.py   # Kafka Producer
+│   └── kafka_consumer.py   # Kafka Consumer
 ├── sql/
-│   └── init.sql            # Schema base de données
-├── outputs/                # Logs et résultats
-├── imdb_analysis.ipynb     # Analyse IMDB
-├── ANSWERS.md              # Réponses aux questions
-├── docker-compose.yml      # Configuration Docker
-└── requirements.txt        # Dépendances Python
+│   └── init.sql            # Database schema
+├── outputs/                # Logs and results
+├── imdb_analysis.ipynb     # IMDB Analysis
+├── ANSWERS.md              # Answers to questions
+├── docker-compose.yml      # Docker configuration
+└── requirements.txt        # Python dependencies
+```
+
+## Installation
+
+### Prerequisites
+- Docker Desktop
+- Python 3.9+ (i had python 3.13 and it caused problem with panda and numpy had to downgrade)
+- pip
 
 
-Installation
-Prérequis
+### Steps
 
-Docker Desktop
-Python 3.9+
-pip
+1. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-Étapes
+2. Start Docker services:
+```bash
+docker-compose up -d
+```
 
-Installer les dépendances Python:
+3. Verify services are running:
+```bash
+docker-compose ps
+```
 
-bashpip install -r requirements.txt
+## Usage
 
-Démarrer les services Docker:
+### Part 1: IMDB Analysis
 
-bashdocker-compose up -d
+Run the Jupyter notebook:
+```bash
+jupyter notebook imdb_analysis.ipynb
+```
 
-Vérifier que les services sont démarrés:
+The notebook will:
+- Download IMDB datasets
+- Answer all questions
+- Generate ANSWERS.md
 
-bashdocker-compose ps
-Utilisation
-Partie 1: Analyse IMDB
-Ouvrir et exécuter le notebook Jupyter:
-bashjupyter notebook imdb_analysis.ipynb
-Le notebook va:
+### Part 2: Stream Processing
 
-Télécharger les datasets IMDB
-Répondre aux 12 questions
-Générer ANSWERS.md
+Open 2 separate terminals:
 
-Partie 2: Stream Processing
-Dans 2 terminaux séparés:
-Terminal 1 - Producer:
-bashpython src/kafka_producer.py
-Terminal 2 - Consumer:
-bashpython src/kafka_consumer.py
-Le système va:
+**Terminal 1 - Producer:**
+```bash
+python src/kafka_producer.py
+```
 
-Monitorer les événements Wikipedia en temps réel
-Traquer 5 entités IMDB
-Stocker les métriques dans PostgreSQL
-Générer des alertes
+**Terminal 2 - Consumer:**
+```bash
+python src/kafka_consumer.py
+```
 
-Entités Trackées
+The system will:
+- Monitor Wikipedia events in real-time
+- Track 5 IMDB entities
+- Store metrics in PostgreSQL
+- Generate alerts
 
-The Shawshank Redemption (film)
-The Godfather (film)
-Christopher Nolan (réalisateur)
-Morgan Freeman (acteur)
-Film noir (genre)
+## Tracked Entities
 
-Base de Données
-Tables
+1. The Shawshank Redemption (movie)
+2. The Godfather (movie)
+3. Christopher Nolan (director)
+4. Morgan Freeman (actor)
+5. Film noir (genre)
 
-wiki_events: Événements Wikipedia bruts
-entity_metrics: Métriques agrégées par entité
-alerts: Alertes générées
+## Database
 
-Connexion
-bashdocker exec -it postgres psql -U imdb_user -d imdb_db
-Requêtes utiles:
-sqlSELECT * FROM wiki_events LIMIT 10;
+### Tables
+- **wiki_events**: Raw Wikipedia events
+- **entity_metrics**: Aggregated metrics per entity
+- **alerts**: Generated alerts
+
+### Connection
+```bash
+docker exec -it postgres psql -U imdb_user -d imdb_db
+```
+
+### Useful queries
+```sql
+SELECT * FROM wiki_events LIMIT 10;
 SELECT entity_name, COUNT(*) FROM wiki_events GROUP BY entity_name;
 SELECT * FROM alerts ORDER BY triggered_at DESC;
-Système d'Alertes
-Le consumer génère des alertes pour:
+```
 
-Activité élevée (>10 éditions par heure)
-Éditions rapides (>3 par minute)
-Activité de bots élevée (>80%)
+## Alert System
 
-Arrêt
-bash# Arrêter producer et consumer: Ctrl+C
+The consumer generates alerts for:
+- High activity (>10 edits per hour)
+- Rapid edits (>3 per minute)
+- High bot activity (>80%)
 
-# Arrêter Docker
+## Shutdown
+```bash
+# Stop producer and consumer: Ctrl+C
+
+# Stop Docker
 docker-compose down
-Notes
+```
 
-Les datasets IMDB peuvent prendre plusieurs minutes à télécharger
-Le stream processing nécessite une connexion internet active
-Les événements Wikipedia peuvent être rares selon les entités
-=======
-# data-analysis-of-IMDB-movie-Project-Chevallier-and-ElBouhouti-ece-big-data-processing-2025-fall
->>>>>>> 952d46d56180af181770337637c8ffefb398aab3
+## Notes
+
+- IMDB datasets may take several minutes to download
+- Stream processing requires active internet connection
+- Wikipedia events may be rare depending on entities
+
