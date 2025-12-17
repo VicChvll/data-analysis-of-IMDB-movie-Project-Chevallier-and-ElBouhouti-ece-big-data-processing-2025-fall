@@ -1,14 +1,23 @@
 import psycopg2
 from psycopg2.extras import Json
-import config
+import os
+
+# Force UTF-8 encoding
+os.environ['PGCLIENTENCODING'] = 'UTF8'
+
+POSTGRES_HOST = 'localhost'
+POSTGRES_PORT = 5432
+POSTGRES_DB = 'imdb_db'
+POSTGRES_USER = 'imdb_user'
+POSTGRES_PASSWORD = 'imdb_password'
 
 def get_connection():
     return psycopg2.connect(
-        host=config.POSTGRES_HOST,
-        port=config.POSTGRES_PORT,
-        database=config.POSTGRES_DB,
-        user=config.POSTGRES_USER,
-        password=config.POSTGRES_PASSWORD
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        database=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD
     )
 
 def insert_event(event_data):

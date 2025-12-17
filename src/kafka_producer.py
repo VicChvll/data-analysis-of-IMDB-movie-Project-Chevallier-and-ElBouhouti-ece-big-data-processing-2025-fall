@@ -1,14 +1,11 @@
 import json
 import requests
 import sseclient
-from kafka import KafkaProducer
+from confluent_kafka import Producer
 import config
 
 def create_producer():
-    return KafkaProducer(
-        bootstrap_servers=config.KAFKA_BOOTSTRAP_SERVERS,
-        value_serializer=lambda v: json.dumps(v).encode('utf-8')
-    )
+    return Producer({'bootstrap.servers': config.KAFKA_BOOTSTRAP_SERVERS})
 
 def process_event(event_data, producer):
     title = event_data.get('title', '')
@@ -29,41 +26,55 @@ def process_event(event_data, producer):
         'raw_event': event_data
     }
     
-    producer.send(config.KAFKA_TOPIC, value=structured_event)
+    producer.produce(
+        config.KAFKA_TOPIC,
+        value=json.dumps(structured_event).encode('utf-8')
+    )
+    producer.poll(0)
     print(f"Event produced: {entity_name} - {structured_event['event_type']}")
     return True
 
 def main():
     print("Starting Kafka producer...")
-    print(f"Tracking {len(config.TRACKED_ENTITIES)} entities")
-    
     producer = create_producer()
     
-    response = requests.get(config.WIKIMEDIA_STREAM_URL, stream=True)
+    response = requests.get(config.WIKIMEDIA_STREAM_URL, stream=True, timeout=None)
     client = sseclient.SSEClient(response)
     
     print("Connected to Wikimedia EventStreams")
     print("Monitoring events...")
     
     event_count = 0
+    total_processed = 0
+    
     try:
         for event in client.events():
+            total_processed += 1
+            
+            if total_processed % 1000 == 0:
+                print(f"Scanned {total_processed} events, found {event_count} matching")
+            
             try:
-                event_data = json.loads(event.data)
-                if process_event(event_data, producer):
-                    event_count += 1
-                    if event_count % 10 == 0:
-                        print(f"Total events produced: {event_count}")
+                if event.data:
+                    event_data = json.loads(event.data)
+                    if process_event(event_data, producer):
+                        event_count += 1
+                        if event_count % 10 == 0:
+                            producer.flush()
             except json.JSONDecodeError:
                 continue
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"Error processing event: {e}")
                 continue
+                
     except KeyboardInterrupt:
-        print("\nShutting down producer...")
+        print("\nShutting down...")
+    except Exception as e:
+        print(f"Connection error: {e}")
     finally:
-        producer.close()
-        print(f"Total events produced: {event_count}")
+        producer.flush()
+        print(f"Total matched events: {event_count}")
+        print(f"Total events scanned: {total_processed}")
 
 if __name__ == '__main__':
     main()

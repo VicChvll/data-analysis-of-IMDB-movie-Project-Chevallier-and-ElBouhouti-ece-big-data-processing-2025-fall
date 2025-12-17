@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from collections import defaultdict
-from kafka import KafkaConsumer
+from confluent_kafka import Consumer, KafkaError
 import config
 import database as db
 
@@ -58,12 +58,7 @@ class AlertSystem:
         self.alert_cooldowns = {}
     
     def add_event(self, entity_name, event):
-        cutoff = datetime.now() - timedelta(hours=1)
-        timestamp_str = event.get('timestamp')
-        
-        if timestamp_str:
-            self.recent_events[entity_name].append(event)
-        
+        self.recent_events[entity_name].append(event)
         self.check_alerts(entity_name)
     
     def check_alerts(self, entity_name):
@@ -90,18 +85,18 @@ class AlertSystem:
             self.alert_cooldowns[alert_key] = datetime.now()
 
 def create_consumer():
-    return KafkaConsumer(
-        config.KAFKA_TOPIC,
-        bootstrap_servers=config.KAFKA_BOOTSTRAP_SERVERS,
-        value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-        auto_offset_reset='latest',
-        group_id='imdb-consumer-group'
-    )
+    return Consumer({
+        'bootstrap.servers': config.KAFKA_BOOTSTRAP_SERVERS,
+        'group.id': 'imdb-consumer-group',
+        'auto.offset.reset': 'latest'
+    })
 
 def main():
     print("Starting Kafka consumer...")
     
     consumer = create_consumer()
+    consumer.subscribe([config.KAFKA_TOPIC])
+    
     aggregator = MetricsAggregator()
     alerts = AlertSystem()
     
@@ -109,8 +104,19 @@ def main():
     
     event_count = 0
     try:
-        for message in consumer:
-            event = message.value
+        while True:
+            msg = consumer.poll(1.0)
+            
+            if msg is None:
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    continue
+                else:
+                    print(f"Error: {msg.error()}")
+                    break
+            
+            event = json.loads(msg.value().decode('utf-8'))
             entity_name = event.get('entity_name')
             
             event_data = {
